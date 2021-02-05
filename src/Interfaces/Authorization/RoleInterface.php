@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace EonX\EasySecurity\Interfaces\Authorization;
 
-interface RoleInterface
+interface RoleInterface extends \EonX\EasySecurity\Interfaces\RoleInterface
 {
     public function __toString(): string;
 
