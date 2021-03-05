@@ -9,11 +9,10 @@ use EonX\EasySecurity\Authorization\AuthorizationMatrixFactory;
 use EonX\EasySecurity\Authorization\CachedAuthorizationMatrixFactory;
 use EonX\EasySecurity\Interfaces\Authorization\AuthorizationMatrixFactoryInterface;
 use EonX\EasySecurity\Interfaces\Authorization\AuthorizationMatrixInterface;
-use EonX\EasySecurity\Interfaces\DeferredSecurityContextProviderInterface;
 use EonX\EasySecurity\Interfaces\ProviderInterface;
-use EonX\EasySecurity\Interfaces\SecurityContextConfiguratorInterface;
+use EonX\EasySecurity\Interfaces\SecurityContextInterface;
 use EonX\EasySecurity\Interfaces\UserInterface;
-use EonX\EasyUtils\CollectorHelper;
+use EonX\EasySecurity\MainSecurityContextConfigurator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\DataCollector\DataCollector;
@@ -31,41 +30,33 @@ final class SecurityContextDataCollector extends DataCollector
     private $authorizationMatrixFactory;
 
     /**
-     * @var \EonX\EasySecurity\Interfaces\SecurityContextConfiguratorInterface[]
+     * @var \EonX\EasySecurity\Interfaces\SecurityContextInterface
      */
-    private $configurators;
+    private $securityContext;
 
     /**
-     * @var \EonX\EasySecurity\Interfaces\DeferredSecurityContextProviderInterface
+     * @var \EonX\EasySecurity\MainSecurityContextConfigurator
      */
-    private $securityContextProvider;
+    private $securityContextConfigurator;
 
-    /**
-     * @param iterable<mixed> $configurators
-     */
     public function __construct(
         AuthorizationMatrixFactoryInterface $authorizationMatrixFactory,
-        DeferredSecurityContextProviderInterface $securityContextProvider,
-        iterable $configurators
+        MainSecurityContextConfigurator $securityContextConfigurator,
+        SecurityContextInterface $securityContext
     ) {
         $this->authorizationMatrixFactory = $authorizationMatrixFactory;
-        $this->securityContextProvider = $securityContextProvider;
-
-        $this->configurators = CollectorHelper::orderLowerPriorityFirstAsArray(
-            CollectorHelper::filterByClass($configurators, SecurityContextConfiguratorInterface::class)
-        );
+        $this->securityContextConfigurator = $securityContextConfigurator;
+        $this->securityContext = $securityContextConfigurator->configure($securityContext);
     }
 
     public function collect(Request $request, Response $response, ?\Throwable $throwable = null): void
     {
-        $securityContext = $this->securityContextProvider->getSecurityContext();
-
-        $this->data['authorization_matrix'] = $securityContext->getAuthorizationMatrix();
-        $this->data['permissions'] = $securityContext->getPermissions();
-        $this->data['roles'] = $securityContext->getRoles();
-        $this->data['provider'] = $securityContext->getProvider();
-        $this->data['user'] = $securityContext->getUser();
-        $this->data['token'] = $securityContext->getToken();
+        $this->data['authorization_matrix'] = $this->securityContext->getAuthorizationMatrix();
+        $this->data['permissions'] = $this->securityContext->getPermissions();
+        $this->data['roles'] = $this->securityContext->getRoles();
+        $this->data['provider'] = $this->securityContext->getProvider();
+        $this->data['user'] = $this->securityContext->getUser();
+        $this->data['token'] = $this->securityContext->getToken();
 
         $this->setContextConfigurators();
         $this->setRolesPermissionsProviders();
@@ -145,7 +136,7 @@ final class SecurityContextDataCollector extends DataCollector
     {
         $this->data['context_configurators'] = [];
 
-        foreach ($this->configurators as $contextConfigurator) {
+        foreach ($this->securityContextConfigurator->getContextConfigurators() as $contextConfigurator) {
             $reflection = new \ReflectionClass($contextConfigurator);
 
             $this->data['context_configurators'][] = [

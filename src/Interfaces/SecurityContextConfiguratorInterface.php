@@ -9,10 +9,5 @@ use Symfony\Component\HttpFoundation\Request;
 
 interface SecurityContextConfiguratorInterface extends HasPriorityInterface
 {
-    /**
-     * @var int
-     */
-    public const SYSTEM_PRIORITY = -100;
-
     public function configure(SecurityContextInterface $context, Request $request): void;
 }
