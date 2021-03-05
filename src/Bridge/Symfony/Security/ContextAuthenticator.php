@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace EonX\EasySecurity\Bridge\Symfony\Security;
 
 use EonX\EasySecurity\Bridge\Symfony\Interfaces\AuthenticationFailureResponseFactoryInterface;
-use EonX\EasySecurity\Interfaces\DeferredSecurityContextProviderInterface;
+use EonX\EasySecurity\Interfaces\ContextInterface;
 use EonX\EasySecurity\Interfaces\SecurityContextInterface;
 use EonX\EasySecurity\Interfaces\UserInterface as EonxUserInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,15 +24,15 @@ final class ContextAuthenticator extends AbstractGuardAuthenticator
     private $responseFactory;
 
     /**
-     * @var \EonX\EasySecurity\Interfaces\DeferredSecurityContextProviderInterface
+     * @var \EonX\EasySecurity\Interfaces\SecurityContextInterface
      */
-    private $securityContextProvider;
+    private $securityContext;
 
     public function __construct(
-        DeferredSecurityContextProviderInterface $securityContextProvider,
+        SecurityContextInterface $securityContext,
         AuthenticationFailureResponseFactoryInterface $respFactory
     ) {
-        $this->securityContextProvider = $securityContextProvider;
+        $this->securityContext = $securityContext;
         $this->responseFactory = $respFactory;
     }
 
@@ -44,13 +44,13 @@ final class ContextAuthenticator extends AbstractGuardAuthenticator
         return true;
     }
 
-    public function getCredentials(Request $request): SecurityContextInterface
+    public function getCredentials(Request $request): ContextInterface
     {
-        return $this->securityContextProvider->getSecurityContext();
+        return $this->securityContext;
     }
 
     /**
-     * @param \EonX\EasySecurity\Interfaces\SecurityContextInterface $context
+     * @param \EonX\EasySecurity\Interfaces\ContextInterface $context
      *
      * @return null|void|\EonX\EasySecurity\Interfaces\UserInterface
      */
