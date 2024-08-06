@@ -9,7 +9,7 @@ use EonX\EasySecurity\SymfonySecurity\Voter\RoleVoter;
 use EonX\EasySecurity\Tests\Unit\AbstractSymfonyTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-final class EnableVotersTest extends AbstractSymfonyTestCase
+final class EnableVoterTest extends AbstractSymfonyTestCase
 {
     /**
      * @see testVotersEnabled
